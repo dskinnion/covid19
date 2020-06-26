@@ -7,24 +7,59 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r data, echo = FALSE}
+countries_daily <- read_xlsx("raw-data/COVID-19-geographic-disbtribution-worldwide-2020-06-25.xlsx")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r data adding, echo = FALSE}
+countries_per_cap <- countries_daily %>% 
+  mutate(cases_per_cap = cases / popData2019)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r plot USA, echo = FALSE}
+countries_daily %>%
+  filter(countryterritoryCode == "USA") %>%
+  ggplot(aes(x = dateRep, y = cases)) +
+    geom_line()
+
+countries_per_cap %>%
+  filter(countryterritoryCode == "USA") %>%
+  ggplot(aes(x = dateRep, y = cases_per_cap)) +
+    geom_line()
+```
+```{r plot three countries, echo = FALSE}
+countries_daily %>%
+  filter(countryterritoryCode %in% c("USA", "ITA", "CHN")) %>%
+  ggplot(aes(x = dateRep, y = cases, group = countryterritoryCode, color = countryterritoryCode)) +
+    geom_line()
+
+countries_per_cap %>%
+  filter(countryterritoryCode %in% c("USA", "ITA", "CHN")) %>%
+  ggplot(aes(x = dateRep, y = cases_per_cap, group = countryterritoryCode, color = countryterritoryCode)) +
+    geom_line()
+```
+
+```{r splitting into individual country tibbles, echo = FALSE}
+
+n <- unique(countries_daily$countryterritoryCode)
+n <- as.character(n)
+
+total_case_fxn <- function(country) {
+  object <- countries_daily %>%
+    filter(countryterritoryCode == country) 
+  
+  assign(paste(country), data.frame(object), envir = .GlobalEnv)
+}
+
+map(n, total_case_fxn)
+```
+
+
+
+
+
+
+
